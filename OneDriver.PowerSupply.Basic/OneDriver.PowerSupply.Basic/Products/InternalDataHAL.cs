@@ -2,9 +2,9 @@
 
 namespace OneDriver.PowerSupply.Basic.Products
 {
-    public class InternalDataHAL : BaseDataForAnnouncement
+    public class InternalDataHal : BaseDataForAnnouncement
     {
-        public InternalDataHAL(int channelNumber, double voltage, double current)
+        public InternalDataHal(int channelNumber, double voltage, double current)
         {
             ChannelNumber = channelNumber;
             CurrentVoltage = voltage;
@@ -12,7 +12,7 @@ namespace OneDriver.PowerSupply.Basic.Products
             TimeStamp = DateTime.Now;
         }
 
-        public InternalDataHAL()
+        public InternalDataHal()
         {
             CurrentVoltage = 0;
             CurrentCurrent = 0;

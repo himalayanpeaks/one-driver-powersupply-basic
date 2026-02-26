@@ -1,14 +1,13 @@
 ﻿using OneDriver.Framework.Libs.Announcer;
 using System.IO.Ports;
 using OneDriver.Framework.Libs.Validator;
-using OneDriver.Framework.Module;
-using OneDriver.Toolbox;
 using Serilog;
 using System.Globalization;
+using OneDriver.Toolbox;
 
 namespace OneDriver.PowerSupply.Basic.Products
 {
-    public class Kd3005p : DataTunnel<InternalDataHAL>, IPowerSupplyHAL
+    public class Kd3005p : DataTunnel<InternalDataHal>, IPowerSupplyHal
     {
         public Kd3005p()
         {
@@ -27,14 +26,14 @@ namespace OneDriver.PowerSupply.Basic.Products
             Identification = "KORAD KD3005P";
         }
 
-        protected override void FetchDataForTunnel(ref InternalDataHAL data)
+        protected override void FetchDataForTunnel(ref InternalDataHal data)
         {
             for (var i = 0; i < NumberOfChannels; i++)
             {
                 GetActualVolts(i, out var volts);
                 GetActualAmps(i, out var amps);
                 if(volts != prediousVolts || amps != prediousAmps)
-                    data = new InternalDataHAL(i, volts, amps);
+                    data = new InternalDataHal(i, volts, amps);
                 prediousVolts = volts;
                 prediousAmps = amps;    
             }
@@ -42,7 +41,7 @@ namespace OneDriver.PowerSupply.Basic.Products
 
         private double prediousVolts;
         private double prediousAmps;
-        public Framework.Module.Definition.DeviceError Read(out string readData)
+        public Module.Definition.DeviceError Read(out string readData)
         {
             readData = "";
             try
@@ -54,22 +53,22 @@ namespace OneDriver.PowerSupply.Basic.Products
             catch (TimeoutException e)
             {
                 Log.Error(e.ToString());
-                return Framework.Module.Definition.DeviceError.Timeout;
+                return Module.Definition.DeviceError.Timeout;
             }
             catch (InvalidOperationException e)
             {
                 Log.Error(e.ToString());
-                return Framework.Module.Definition.DeviceError.ConnectionError;
+                return Module.Definition.DeviceError.ConnectionError;
             }
             catch (ArgumentException e)
             {
                 Log.Error(e.ToString());
-                return Framework.Module.Definition.DeviceError.DataIsNull;
+                return Module.Definition.DeviceError.DataIsNull;
             }
-            return Framework.Module.Definition.DeviceError.NoError;
+            return Module.Definition.DeviceError.NoError;
         }
 
-        public Framework.Module.Definition.DeviceError Write(string data)
+        public Module.Definition.DeviceError Write(string data)
         {
             try
             {
@@ -81,24 +80,24 @@ namespace OneDriver.PowerSupply.Basic.Products
             catch (TimeoutException e)
             {
                 Log.Error(e.ToString());
-                return Framework.Module.Definition.DeviceError.Timeout;
+                return Module.Definition.DeviceError.Timeout;
             }
             catch (InvalidOperationException e)
             {
                 Log.Error(e.ToString());
-                return Framework.Module.Definition.DeviceError.ConnectionError;
+                return Module.Definition.DeviceError.ConnectionError;
             }
             catch(ArgumentException e)
             {
                 Log.Error(e.ToString());
-                return Framework.Module.Definition.DeviceError.DataIsNull;
+                return Module.Definition.DeviceError.DataIsNull;
             }
-            return Framework.Module.Definition.DeviceError.NoError;
+            return Module.Definition.DeviceError.NoError;
         }
 
         private SerialPort ComPort { get; set; }
 
-        public ConnectionError Open(string initString, IValidator validator)
+        public Module.Definition.ConnectionError Open(string initString, IValidator validator)
         {
             ComPort.PortName = validator.ValidationRegex.Match(initString).Groups[1].Value;
             try
@@ -107,47 +106,47 @@ namespace OneDriver.PowerSupply.Basic.Products
                 {
                     ComPort.Open();
                     Write("*IDN?");
-                    if((Read(out var identification) is var err) && err != Framework.Module.Definition.DeviceError.NoError)
+                    if((Read(out var identification) is var err) && err != Module.Definition.DeviceError.NoError)
                     {
-                        Log.Error(ComPort.PortName + " " + ConnectionError.CommunicationError.GetDescription());
-                        return ConnectionError.CommunicationError;
+                        Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.CommunicationError.GetDescription());
+                        return Module.Definition.ConnectionError.CommunicationError;
                     }
                     StartProcessDataAnnouncer();
                 }
                 else
-                    Log.Error(ComPort.PortName + " " + ConnectionError.AlreadyOpened.GetDescription());
+                    Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.AlreadyOpened.GetDescription());
 
             }
             catch (ArgumentException)
             {
-                Log.Error(ComPort.PortName + " " + ConnectionError.InvalidName.GetDescription());
-                return ConnectionError.InvalidName;
+                Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.InvalidName.GetDescription());
+                return Module.Definition.ConnectionError.InvalidName;
             }
             catch (UnauthorizedAccessException)
             {
-                Log.Error(ComPort.PortName + " " + ConnectionError.UnauthorizedAccess.GetDescription());
-                return ConnectionError.UnauthorizedAccess;
+                Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.UnauthorizedAccess.GetDescription());
+                return Module.Definition.ConnectionError.UnauthorizedAccess;
             }
             catch (IOException)
             {
-                Log.Error(ComPort.PortName + " " + ConnectionError.IOError.GetDescription());
-                return ConnectionError.IOError;
+                Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.IOError.GetDescription());
+                return Module.Definition.ConnectionError.IOError;
             }
             catch (InvalidOperationException)
             {
-                Log.Error(ComPort.PortName + " " + ConnectionError.InvalidOperation.GetDescription());
-                return ConnectionError.InvalidOperation;
+                Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.InvalidOperation.GetDescription());
+                return Module.Definition.ConnectionError.InvalidOperation;
             }
             catch (Exception)
             {
-                Log.Error(ComPort.PortName + " " + ConnectionError.UnknownError.GetDescription());
-                return ConnectionError.UnknownError;
+                Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.UnknownError.GetDescription());
+                return Module.Definition.ConnectionError.UnknownError;
             }
 
-            return ConnectionError.NoError;
+            return Module.Definition.ConnectionError.NoError;
         }
 
-        public ConnectionError Close()
+        public Module.Definition.ConnectionError Close()
         {
             try
             {
@@ -155,90 +154,90 @@ namespace OneDriver.PowerSupply.Basic.Products
             }
             catch (Exception)
             {
-                Log.Error(ComPort.PortName + " " + ConnectionError.ErrorInDisconnecting.GetDescription());
-                return ConnectionError.ErrorInDisconnecting;
+                Log.Error(ComPort.PortName + " " + Module.Definition.ConnectionError.ErrorInDisconnecting.GetDescription());
+                return Module.Definition.ConnectionError.ErrorInDisconnecting;
             }
-            return ConnectionError.NoError;
+            return Module.Definition.ConnectionError.NoError;
         }
 
         public double MaxCurrentInAmpere { get; }
         public double MaxVoltageInVolts { get; }
         public string Identification { get; private set; }
         public Abstract.Contracts.Definition.ControlMode[] Mode { get; }
-        public Framework.Module.Definition.DeviceError SetMode(double channelNumber, Abstract.Contracts.Definition.ControlMode mode)
+        public Module.Definition.DeviceError SetMode(double channelNumber, Abstract.Contracts.Definition.ControlMode mode)
         {
-            return Framework.Module.Definition.DeviceError.NoError;
+            return Module.Definition.DeviceError.NoError;
         }
         public string GetErrorMessage(int code)
         {
-            if (Enum.IsDefined(typeof(Framework.Module.Definition.DeviceError), code))
-                return ((Framework.Module.Definition.DeviceError)code).ToString();
+            if (Enum.IsDefined(typeof(Module.Definition.DeviceError), code))
+                return ((Module.Definition.DeviceError)code).ToString();
 
             return $"Unknown error code: {code}";
         }
 
 
-        public Framework.Module.Definition.DeviceError SetDesiredVolts(double channelNumber, double volts)
+        public Module.Definition.DeviceError SetDesiredVolts(double channelNumber, double volts)
         {
             var str = "VSET" + (channelNumber + 1) + ":" + volts.ToString(new CultureInfo("en-EN"));
             var err = Write(str);
-            if (err != Framework.Module.Definition.DeviceError.NoError)
+            if (err != Module.Definition.DeviceError.NoError)
                 return err;
             else
                 Write("OUT" + (channelNumber + 1));
 
-            return Framework.Module.Definition.DeviceError.NoError;
+            return Module.Definition.DeviceError.NoError;
         }
 
-        public Framework.Module.Definition.DeviceError GetActualVolts(double channelNumber, out double volts)
+        public Module.Definition.DeviceError GetActualVolts(double channelNumber, out double volts)
         {
             volts = 0;
             string command = $"VOUT{channelNumber + 1}?";
 
-            if (Write(command) is var err && err != Framework.Module.Definition.DeviceError.NoError)
+            if (Write(command) is var err && err != Module.Definition.DeviceError.NoError)
                 return err;
             
-            if (Read(out var val) is var readErr && readErr != Framework.Module.Definition.DeviceError.NoError)
+            if (Read(out var val) is var readErr && readErr != Module.Definition.DeviceError.NoError)
                 return readErr;
 
             if (double.TryParse(val, NumberStyles.Float, new CultureInfo("en-EN"), out volts))
-                return Framework.Module.Definition.DeviceError.NoError;
+                return Module.Definition.DeviceError.NoError;
             Log.Error(val + " : Invalid response from device.");
-            return Framework.Module.Definition.DeviceError.InvalidResponse; 
+            return Module.Definition.DeviceError.InvalidResponse; 
         }
-        public Framework.Module.Definition.DeviceError GetActualAmps(double channelNumber, out double amps)
+        public Module.Definition.DeviceError GetActualAmps(double channelNumber, out double amps)
         {
             amps = 0;
             string command = $"IOUT{channelNumber + 1}?";
 
-            if (Write(command) is var err && err != Framework.Module.Definition.DeviceError.NoError)
+            if (Write(command) is var err && err != Module.Definition.DeviceError.NoError)
                 return err;
-            if (Read(out var val) is var readErr && readErr != Framework.Module.Definition.DeviceError.NoError)
+            if (Read(out var val) is var readErr && readErr != Module.Definition.DeviceError.NoError)
                 return readErr;
 
             if (double.TryParse(val, NumberStyles.Float, new CultureInfo("en-EN"), out amps))
-                return Framework.Module.Definition.DeviceError.NoError;
+                return Module.Definition.DeviceError.NoError;
             Log.Error(val + " : Invalid response from device.");
-            return Framework.Module.Definition.DeviceError.InvalidResponse;
+            return Module.Definition.DeviceError.InvalidResponse;
         }
 
-        public Framework.Module.Definition.DeviceError SetDesiredAmps(double channelNumber, double amps)
+        public Module.Definition.DeviceError SetDesiredAmps(double channelNumber, double amps)
         {
             var str = "ISET" + (channelNumber + 1) + ":" + amps.ToString(new CultureInfo("en-EN"));
             var err = Write(str);
-            if(err != Framework.Module.Definition.DeviceError.NoError)
+            if(err != Module.Definition.DeviceError.NoError)
                 return err;
             else
                 Write("OUT" + (channelNumber + 1));
-            return Framework.Module.Definition.DeviceError.NoError;
+            return Module.Definition.DeviceError.NoError;
         }
 
-        public Framework.Module.Definition.DeviceError AllOff()
+        public Module.Definition.DeviceError AllOff()
         {
             return Write("OUT0");
         }
 
-        public Framework.Module.Definition.DeviceError AllOn()
+        public Module.Definition.DeviceError AllOn()
         {
             return Write("OUT1");
         }

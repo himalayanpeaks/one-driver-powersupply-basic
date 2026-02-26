@@ -2,10 +2,5 @@
 
 namespace OneDriver.PowerSupply.Basic.Channels
 {
-    public class ChannelParams : CommonChannelParams
-    {
-        public ChannelParams(string name) : base(name)
-        {
-        }
-    }
+    public class ChannelParams(string name) : CommonChannelParams(name);
 }

@@ -1,21 +1,21 @@
 ﻿using OneDriver.Framework.Base;
 using OneDriver.Framework.Libs.Validator;
-using OneDriver.Framework.Module.Parameter;
 using OneDriver.PowerSupply.Abstract;
 using OneDriver.PowerSupply.Basic.Channels;
 using OneDriver.PowerSupply.Basic.Products;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using OneDriver.Module.Channel;
 using Serilog;
 
 namespace OneDriver.PowerSupply.Basic
 {
     public class Device : CommonDevice<DeviceParams, ChannelParams, ChannelProcessData>
     {
-        public Device(string name, IValidator validator, IPowerSupplyHAL powerSupplyHAL) :
-            base(new DeviceParams(name), validator, new ObservableCollection<BaseChannelWithProcessData<ChannelParams, ChannelProcessData>>())
+        public Device(string name, IValidator validator, IPowerSupplyHal powerSupplyHal) :
+            base(new DeviceParams(name), validator, new ObservableCollection<BaseChannel<ChannelParams, ChannelProcessData>>())
         {
-            _powerSupplyHAL = powerSupplyHAL;
+            _powerSupplyHal = powerSupplyHal;
             Init();
         }
 
@@ -24,19 +24,18 @@ namespace OneDriver.PowerSupply.Basic
             Parameters.PropertyChanging += Parameters_PropertyChanging;
             Parameters.PropertyChanged += Parameters_PropertyChanged;
             Parameters.PropertyReadRequested += Parameters_PropertyReadRequested;
-            _powerSupplyHAL.AttachToProcessDataEvent(ProcessDataChanged);
+            _powerSupplyHal.AttachToProcessDataEvent(ProcessDataChanged);
 
 
-            for (var i = 0; i < _powerSupplyHAL.NumberOfChannels; i++)
+            for (var i = 0; i < _powerSupplyHal.NumberOfChannels; i++)
             {
-                var item = new BaseChannelWithProcessData<ChannelParams, ChannelProcessData>(new ChannelParams("Ch" + i.ToString()), new ChannelProcessData());
+                var item = new Channel(new ChannelParams("Ch" + i.ToString()), new ChannelProcessData());
                 
                 item.Parameters.PropertyChanged += Parameters_PropertyChanged;
                 item.Parameters.PropertyChanging += Parameters_PropertyChanging;
                 item.Parameters.PropertyReadRequested += Parameters_PropertyReadRequested;
                 Elements.Add(item);
             }   
-
         }
 
         private void Parameters_PropertyReadRequested(object sender, PropertyReadRequestedEventArgs e)
@@ -44,19 +43,21 @@ namespace OneDriver.PowerSupply.Basic
             switch (e.PropertyName)
             {
                 case nameof(Parameters.MaxVolts):
-                    e.Value = _powerSupplyHAL.MaxVoltageInVolts;
+                    e.Value = _powerSupplyHal.MaxVoltageInVolts;
                     break;
                 case nameof(Parameters.MaxAmps):
-                    e.Value = _powerSupplyHAL.MaxCurrentInAmpere;
+                    e.Value = _powerSupplyHal.MaxCurrentInAmpere;
+                    break;
+                case nameof(ChannelProcessData.TimeStamp):
+                    e.Value = ((InternalDataHal)sender).TimeStamp;
                     break;
             }
         }
 
-        private void ProcessDataChanged(object sender, InternalDataHAL e)
+        private void ProcessDataChanged(object sender, InternalDataHal e)
         {
-            Elements[e.ChannelNumber].ProcessData.Current = e.CurrentCurrent;
-            Elements[e.ChannelNumber].ProcessData.Voltage = e.CurrentVoltage;
-            Elements[e.ChannelNumber].ProcessData.TimeStamp = e.TimeStamp;
+            Elements[e.ChannelNumber].ProcessData.Curr= e.CurrentCurrent;
+            Elements[e.ChannelNumber].ProcessData.Volts = e.CurrentVoltage;
         }
 
         private void Parameters_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -65,19 +66,19 @@ namespace OneDriver.PowerSupply.Basic
             switch (e.PropertyName)
             {
                 case nameof(ChannelParams.DesiredAmps):
-                    var channel = this.Elements.FirstOrDefault(x => x.Parameters == (ChannelParams)sender);
-                    index = this.Elements.IndexOf(channel);
-                    _powerSupplyHAL.SetDesiredAmps(index, (((ChannelParams)sender).DesiredAmps));
+                    var channel = this.Elements.FirstOrDefault(x => sender != null && x.Parameters == (ChannelParams)sender);
+                    if (channel != null) index = this.Elements.IndexOf(channel);
+                    if (sender != null) _powerSupplyHal.SetDesiredAmps(index, (((ChannelParams)sender).DesiredAmps));
                     break;
                 case nameof(ChannelParams.DesiredVolts):
-                    channel = this.Elements.FirstOrDefault(x => x.Parameters == (ChannelParams)sender);
-                    index = this.Elements.IndexOf(channel);
-                    _powerSupplyHAL.SetDesiredVolts(index, (((ChannelParams)sender).DesiredVolts));
+                    channel = this.Elements.FirstOrDefault(x => sender != null && x.Parameters == (ChannelParams)sender);
+                    if (channel != null) index = this.Elements.IndexOf(channel);
+                    if (sender != null) _powerSupplyHal.SetDesiredVolts(index, (((ChannelParams)sender).DesiredVolts));
                     break;
                 case nameof(ChannelParams.ControlMode):
-                    channel = this.Elements.FirstOrDefault(x => x.Parameters == (ChannelParams)sender);
-                    index = this.Elements.IndexOf(channel);
-                    _powerSupplyHAL.SetMode(index, (((ChannelParams)sender).ControlMode));
+                    channel = this.Elements.FirstOrDefault(x => sender != null && x.Parameters == (ChannelParams)sender);
+                    if (channel != null) index = this.Elements.IndexOf(channel);
+                    if (sender != null) _powerSupplyHal.SetMode(index, (((ChannelParams)sender).ControlMode));
                     break;
             }
         }
@@ -86,7 +87,7 @@ namespace OneDriver.PowerSupply.Basic
         {
             switch (e.PropertyName)
             {
-                case nameof(BaseChannelWithProcessData<ChannelParams, ChannelProcessData>.Parameters.DesiredAmps):
+                case nameof(BaseChannel<ChannelParams, ChannelProcessData>.Parameters.DesiredAmps):
                     if ((double)e.NewValue > Parameters.MaxAmps)
                     {
                         Log.Error("Desired Amps is greater than Max Amps");
@@ -94,7 +95,7 @@ namespace OneDriver.PowerSupply.Basic
                     }
 
                     break;
-                case nameof(BaseChannelWithProcessData<ChannelParams, ChannelProcessData>.Parameters.DesiredVolts):
+                case nameof(BaseChannel<ChannelParams, ChannelProcessData>.Parameters.DesiredVolts):
                     if ((double)e.NewValue > Parameters.MaxVolts)
                     {
                         Log.Error("Desired Volts is greater than Max Volts");
@@ -104,17 +105,22 @@ namespace OneDriver.PowerSupply.Basic
             }
         }
 
-        readonly IPowerSupplyHAL _powerSupplyHAL;
-        protected override int CloseConnection() => (int)_powerSupplyHAL.Close();
+        private readonly IPowerSupplyHal _powerSupplyHal;
+        protected override int CloseConnection() => (int)_powerSupplyHal.Close();
 
-        protected override int OpenConnection(string initString) => (int)_powerSupplyHAL.Open(initString, validator);
+        protected override string GetErrorMessageFromDerived(int code)
+        {
+            throw new NotImplementedException();
+        }
 
-        public override int AllChannelsOff() => (int)_powerSupplyHAL.AllOff();
+        protected override int OpenConnection(string initString) => (int)_powerSupplyHal.Open(initString, Validator);
 
-        public override int SetVolts(int channelNumber, double volts) => (int)_powerSupplyHAL.SetDesiredVolts(channelNumber, volts);
+        public override int AllChannelsOff() => (int)_powerSupplyHal.AllOff();
 
-        public override int SetAmps(int channelNumber, double amps) => (int)_powerSupplyHAL.SetDesiredAmps(channelNumber, amps);
+        public override int SetVolts(int channelNumber, double volts) => (int)_powerSupplyHal.SetDesiredVolts(channelNumber, volts);
 
-        public override int AllChannelsOn() => (int)_powerSupplyHAL.AllOn();
+        public override int SetAmps(int channelNumber, double amps) => (int)_powerSupplyHal.SetDesiredAmps(channelNumber, amps);
+
+        public override int AllChannelsOn() => (int)_powerSupplyHal.AllOn();
     }
 }

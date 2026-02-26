@@ -2,10 +2,5 @@
 
 namespace OneDriver.PowerSupply.Basic
 {
-    public class DeviceParams : CommonDeviceParams
-    {
-        public DeviceParams(string name) : base(name)
-        {
-        }
-    }
+    public class DeviceParams(string name) : CommonDeviceParams(name);
 }

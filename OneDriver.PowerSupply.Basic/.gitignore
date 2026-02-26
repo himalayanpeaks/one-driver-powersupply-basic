@@ -1,0 +1,39 @@
+# Build results
+bin/
+obj/
+out/
+
+# User-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Visual Studio
+.vs/
+*.vsidx
+*.vspscc
+
+# Rider
+.idea/
+
+# Azure IoT Secrets - DO NOT COMMIT
+appsettings.Development.json
+appsettings.Production.json
+*.local.json
+secrets.json
+
+# Environment files
+.env
+.env.local
+
+# Docker
+.dockerignore
+
+# Logs
+logs/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
