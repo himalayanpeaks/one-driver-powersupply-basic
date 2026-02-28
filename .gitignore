@@ -398,3 +398,8 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
+*.template
+/OneDriver.PowerSupply.Basic/OneDriver.PowerSupply.Basic.GrpcHost/appsettings.Development.json
+/OneDriver.PowerSupply.Basic/Write-Host
+/OneDriver.PowerSupply.Basic/UPDATE_GITIGNORE.txt
+/OneDriver.PowerSupply.Basic/QUICKSTART.md
