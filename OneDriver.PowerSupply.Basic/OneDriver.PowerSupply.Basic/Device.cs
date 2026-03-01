@@ -6,14 +6,16 @@ using OneDriver.PowerSupply.Basic.Products;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using OneDriver.Module.Channel;
+using OneDriver.PowerSupply.Abstract.Channels;
 using Serilog;
 
 namespace OneDriver.PowerSupply.Basic
 {
-    public class Device : CommonDevice<DeviceParams, ChannelParams, ChannelProcessData>
+    public class Device : CommonDevice<CommonDeviceParams, CommonChannelParams, CommonProcessData>
     {
         public Device(string name, IValidator validator, IPowerSupplyHal powerSupplyHal) :
-            base(new DeviceParams(name), validator, new ObservableCollection<BaseChannel<ChannelParams, ChannelProcessData>>())
+            base(new DeviceParams(name), validator, 
+                new ObservableCollection<BaseChannel<CommonChannelParams, CommonProcessData>>())
         {
             _powerSupplyHal = powerSupplyHal;
             Init();
@@ -29,7 +31,7 @@ namespace OneDriver.PowerSupply.Basic
 
             for (var i = 0; i < _powerSupplyHal.NumberOfChannels; i++)
             {
-                var item = new Channel(new ChannelParams("Ch" + i.ToString()), new ChannelProcessData());
+                var item = new CommonChannel<CommonChannelParams, CommonProcessData>(new ChannelParams("Ch" + i.ToString()), new ChannelProcessData());
                 
                 item.Parameters.PropertyChanged += Parameters_PropertyChanged;
                 item.Parameters.PropertyChanging += Parameters_PropertyChanging;
@@ -56,8 +58,8 @@ namespace OneDriver.PowerSupply.Basic
 
         private void ProcessDataChanged(object sender, InternalDataHal e)
         {
-            Elements[e.ChannelNumber].ProcessData.Curr= e.CurrentCurrent;
-            Elements[e.ChannelNumber].ProcessData.Volts = e.CurrentVoltage;
+            ((ChannelProcessData)Elements[e.ChannelNumber].ProcessData).Curr= e.CurrentCurrent;
+            ((ChannelProcessData)Elements[e.ChannelNumber].ProcessData).Volts = e.CurrentVoltage;
         }
 
         private void Parameters_PropertyChanged(object? sender, PropertyChangedEventArgs e)

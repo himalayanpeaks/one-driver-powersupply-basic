@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="OneDriver.Helper" Version="1.0.1" />
-    <PackageReference Include="OneDriver.PowerSupply.Abstract" Version="2.2.0" />
+    <PackageReference Include="OneDriver.PowerSupply.Abstract" Version="2.2.1" />
     <PackageReference Include="System.IO.Ports" Version="10.0.3" />
 	  <None Include="icon.png" Pack="true" PackagePath="" />
 

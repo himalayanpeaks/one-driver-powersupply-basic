@@ -11,8 +11,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddGrpc();
 builder.Services.AddGrpcReflection();
 
-Console.WriteLine("Enter your Azure IoT device connection string:");
-string deviceConnectionString = Console.ReadLine();
+// Read connection string from configuration
+var deviceConnectionString = builder.Configuration["AzureIoT:DeviceConnectionString"];
+
+if (string.IsNullOrEmpty(deviceConnectionString))
+{
+    Console.WriteLine("❌ ERROR: Azure IoT connection string not found in appsettings.json");
+    Console.WriteLine("Please add 'AzureIoT:DeviceConnectionString' to appsettings.Development.json");
+    return;
+}
+
+Console.WriteLine("✅ Connected to Azure IoT Hub");
+Console.WriteLine($"   Device: {deviceConnectionString.Split(';')[1].Replace("DeviceId=", "")}");
 
 // Register DeviceClient and Device as singletons
 builder.Services.AddSingleton<DeviceClient>(provider =>
@@ -32,9 +42,22 @@ builder.Services.AddSingleton<Device>(provider =>
 // Start app
 var app = builder.Build();
 
-// Start C2D listener as background task
+// Get services
 var deviceClient = app.Services.GetRequiredService<DeviceClient>();
 var device = app.Services.GetRequiredService<Device>();
+
+// Connect to COM5
+Console.WriteLine("🔌 Connecting to COM5...");
+var connectResult = device.Connect("COM5");
+if (connectResult == 0)
+{
+    Console.WriteLine("✅ Successfully connected to power supply on COM5");
+}
+else
+{
+    Console.WriteLine($"❌ Failed to connect to COM5 (error code: {connectResult})");
+    Console.WriteLine("⚠️  Application will continue but device control may not work");
+}
 #region LISTENING
 _ = Task.Run(async () =>
 {

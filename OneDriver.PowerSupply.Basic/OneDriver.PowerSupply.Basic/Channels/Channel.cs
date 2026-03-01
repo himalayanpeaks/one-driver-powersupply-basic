@@ -1,4 +1,5 @@
-﻿using OneDriver.PowerSupply.Abstract.Channels;
+﻿using OneDriver.Module.Channel;
+using OneDriver.PowerSupply.Abstract.Channels;
 
 namespace OneDriver.PowerSupply.Basic.Channels
 {
@@ -6,5 +7,5 @@ namespace OneDriver.PowerSupply.Basic.Channels
     /// Unused class
     /// </summary>
     public class Channel(ChannelParams parameters, ChannelProcessData processData)
-        : CommonChannel<ChannelParams, ChannelProcessData>(parameters, processData);
+        : BaseChannel<ChannelParams, ChannelProcessData>(parameters, processData);
 }
